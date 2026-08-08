@@ -1,0 +1,4 @@
+interface:
+  display_name: "MindFlow 思维导图交接"
+  short_description: "将 Codex 分析结果安全交给 MindFlow 思维导图"
+  default_prompt: "使用 $mindflow-handoff 将当前分析结果生成可编辑的 MindFlow 思维导图。"

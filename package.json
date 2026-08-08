@@ -1,0 +1,36 @@
+{
+  "name": "mindflow-local",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c yellow,cyan \"node --watch server/index.mjs\" \"vite\"",
+    "start": "node server/index.mjs",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm test && npm run build",
+    "mindmap": "node scripts/mindmap-cli.mjs"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "@xyflow/react": "^12.8.4",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.1",
+    "vite": "^7.1.1",
+    "vitest": "^3.2.4"
+  },
+  "license": "MIT",
+  "description": "Local AI mind-map canvas for Codex, Claude Code, Trae, and WorkBuddy",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WangPeng3215/ai_mindmap.git"
+  },
+  "homepage": "https://github.com/WangPeng3215/ai_mindmap"
+}

@@ -1,0 +1,715 @@
+{
+  "id": "3bd24248-c746-41cf-b80b-2380fba0d0fe",
+  "revision": 22,
+  "title": "MindFlow 项目进度与下一步计划",
+  "createdAt": "2026-08-08T06:50:34.143Z",
+  "source": "manual",
+  "reason": "网页编辑或导入",
+  "document": {
+    "version": 1,
+    "revision": 22,
+    "id": "map-eecdd823-da32-4df4-8b4b-2ef0f30462c7",
+    "title": "MindFlow 项目进度与下一步计划",
+    "rootId": "mindflow-project-status",
+    "nodes": {
+      "mindflow-project-status": {
+        "id": "mindflow-project-status",
+        "parentId": null,
+        "text": "MindFlow 项目进度与下一步计划",
+        "children": [
+          "product-positioning",
+          "completed",
+          "real-test",
+          "unfinished",
+          "next-priorities",
+          "constraints"
+        ],
+        "notes": "以当前代码、已完成验收结果和后续产品规划为依据生成。"
+      },
+      "product-positioning": {
+        "id": "product-positioning",
+        "parentId": "mindflow-project-status",
+        "text": "产品定位",
+        "children": [
+          "primary-workflow",
+          "mindflow-role",
+          "manual-editing-core",
+          "page-ai-fallback",
+          "future-integrations"
+        ],
+        "color": "#6f68c9",
+        "side": "right"
+      },
+      "primary-workflow": {
+        "id": "primary-workflow",
+        "parentId": "product-positioning",
+        "text": "Codex + 需求分析 Skill 是主流程",
+        "children": [],
+        "notes": "先在 Codex 中完成高质量需求分析，再把结构化结果交给 MindFlow。"
+      },
+      "mindflow-role": {
+        "id": "mindflow-role",
+        "parentId": "product-positioning",
+        "text": "MindFlow 负责呈现、编辑与校验",
+        "children": [],
+        "notes": "产品核心不是网页聊天，而是可编辑的本地思维导图工作台。"
+      },
+      "manual-editing-core": {
+        "id": "manual-editing-core",
+        "parentId": "product-positioning",
+        "text": "人工编辑必须始终可用",
+        "children": []
+      },
+      "page-ai-fallback": {
+        "id": "page-ai-fallback",
+        "parentId": "product-positioning",
+        "text": "页面 AI 是备用执行端",
+        "children": [],
+        "notes": "只在无法使用 Codex 或需求分析 Skill 的环境中使用。"
+      },
+      "future-integrations": {
+        "id": "future-integrations",
+        "parentId": "product-positioning",
+        "text": "未来可扩展模型 API、插件或本地 Agent",
+        "children": []
+      },
+      "completed": {
+        "id": "completed",
+        "parentId": "mindflow-project-status",
+        "text": "已完成",
+        "children": [
+          "completed-canvas",
+          "completed-layouts",
+          "completed-history-data",
+          "completed-ai-protocol",
+          "completed-codex",
+          "completed-safety",
+          "completed-verification"
+        ],
+        "color": "#4f9b69",
+        "side": "right"
+      },
+      "completed-canvas": {
+        "id": "completed-canvas",
+        "parentId": "completed",
+        "text": "无限画布与人工编辑",
+        "children": [
+          "canvas-crud",
+          "canvas-details",
+          "canvas-drag",
+          "canvas-inspector"
+        ]
+      },
+      "canvas-crud": {
+        "id": "canvas-crud",
+        "parentId": "completed-canvas",
+        "text": "新增、编辑、删除节点",
+        "children": []
+      },
+      "canvas-details": {
+        "id": "canvas-details",
+        "parentId": "completed-canvas",
+        "text": "备注、颜色、折叠",
+        "children": []
+      },
+      "canvas-drag": {
+        "id": "canvas-drag",
+        "parentId": "completed-canvas",
+        "text": "拖拽、排序与子树跟随",
+        "children": []
+      },
+      "canvas-inspector": {
+        "id": "canvas-inspector",
+        "parentId": "completed-canvas",
+        "text": "节点检查器与快捷操作",
+        "children": []
+      },
+      "completed-layouts": {
+        "id": "completed-layouts",
+        "parentId": "completed",
+        "text": "三种导图布局",
+        "children": [
+          "layout-left-right",
+          "layout-top-bottom",
+          "layout-architecture",
+          "layout-direction",
+          "layout-inheritance"
+        ]
+      },
+      "layout-left-right": {
+        "id": "layout-left-right",
+        "parentId": "completed-layouts",
+        "text": "左右布局",
+        "children": []
+      },
+      "layout-top-bottom": {
+        "id": "layout-top-bottom",
+        "parentId": "completed-layouts",
+        "text": "上下布局",
+        "children": []
+      },
+      "layout-architecture": {
+        "id": "layout-architecture",
+        "parentId": "completed-layouts",
+        "text": "自上而下架构图",
+        "children": []
+      },
+      "layout-direction": {
+        "id": "layout-direction",
+        "parentId": "completed-layouts",
+        "text": "二级节点可决定方向",
+        "children": []
+      },
+      "layout-inheritance": {
+        "id": "layout-inheritance",
+        "parentId": "completed-layouts",
+        "text": "新增子节点继承所属方向",
+        "children": []
+      },
+      "completed-history-data": {
+        "id": "completed-history-data",
+        "parentId": "completed",
+        "text": "历史与基础数据能力",
+        "children": [
+          "history-undo-redo",
+          "history-local-save",
+          "history-json"
+        ]
+      },
+      "history-undo-redo": {
+        "id": "history-undo-redo",
+        "parentId": "completed-history-data",
+        "text": "撤销与重做",
+        "children": []
+      },
+      "history-local-save": {
+        "id": "history-local-save",
+        "parentId": "completed-history-data",
+        "text": "本地持久化与实时同步",
+        "children": []
+      },
+      "history-json": {
+        "id": "history-json",
+        "parentId": "completed-history-data",
+        "text": "JSON 导入与导出",
+        "children": []
+      },
+      "completed-ai-protocol": {
+        "id": "completed-ai-protocol",
+        "parentId": "completed",
+        "text": "AI 提案与审核协议",
+        "children": [
+          "protocol-lifecycle",
+          "protocol-map-branch",
+          "protocol-document-ops",
+          "protocol-transaction",
+          "protocol-sse"
+        ],
+        "collapsed": false
+      },
+      "protocol-lifecycle": {
+        "id": "protocol-lifecycle",
+        "parentId": "completed-ai-protocol",
+        "text": "待处理 → 审核 → 完成或拒绝",
+        "children": []
+      },
+      "protocol-map-branch": {
+        "id": "protocol-map-branch",
+        "parentId": "completed-ai-protocol",
+        "text": "支持整图和指定分支",
+        "children": []
+      },
+      "protocol-document-ops": {
+        "id": "protocol-document-ops",
+        "parentId": "completed-ai-protocol",
+        "text": "支持完整文档和增量操作",
+        "children": []
+      },
+      "protocol-transaction": {
+        "id": "protocol-transaction",
+        "parentId": "completed-ai-protocol",
+        "text": "操作事务校验",
+        "children": []
+      },
+      "protocol-sse": {
+        "id": "protocol-sse",
+        "parentId": "completed-ai-protocol",
+        "text": "页面实时接收更新",
+        "children": []
+      },
+      "completed-codex": {
+        "id": "completed-codex",
+        "parentId": "completed",
+        "text": "Codex 主链路",
+        "children": [
+          "codex-skill",
+          "codex-read",
+          "codex-propose",
+          "codex-safe-apply",
+          "codex-no-web-request"
+        ]
+      },
+      "codex-skill": {
+        "id": "codex-skill",
+        "parentId": "completed-codex",
+        "text": "mindflow-handoff Skill 已安装",
+        "children": []
+      },
+      "codex-read": {
+        "id": "codex-read",
+        "parentId": "completed-codex",
+        "text": "读取整图或指定分支",
+        "children": []
+      },
+      "codex-propose": {
+        "id": "codex-propose",
+        "parentId": "completed-codex",
+        "text": "提交页面审核方案",
+        "children": []
+      },
+      "codex-safe-apply": {
+        "id": "codex-safe-apply",
+        "parentId": "completed-codex",
+        "text": "明确授权后安全直写",
+        "children": []
+      },
+      "codex-no-web-request": {
+        "id": "codex-no-web-request",
+        "parentId": "completed-codex",
+        "text": "无需预先创建网页请求",
+        "children": []
+      },
+      "completed-safety": {
+        "id": "completed-safety",
+        "parentId": "completed",
+        "text": "人工修改保护",
+        "children": [
+          "safety-revision",
+          "safety-conflict",
+          "safety-scope",
+          "safety-undo"
+        ]
+      },
+      "safety-revision": {
+        "id": "safety-revision",
+        "parentId": "completed-safety",
+        "text": "导图版本号校验",
+        "children": []
+      },
+      "safety-conflict": {
+        "id": "safety-conflict",
+        "parentId": "completed-safety",
+        "text": "过期方案返回冲突与最新文档",
+        "children": []
+      },
+      "safety-scope": {
+        "id": "safety-scope",
+        "parentId": "completed-safety",
+        "text": "分支方案禁止越界修改",
+        "children": []
+      },
+      "safety-undo": {
+        "id": "safety-undo",
+        "parentId": "completed-safety",
+        "text": "已应用 AI 修改可撤销",
+        "children": []
+      },
+      "completed-verification": {
+        "id": "completed-verification",
+        "parentId": "completed",
+        "text": "工程验证",
+        "children": [
+          "verify-tests",
+          "verify-build",
+          "verify-live",
+          "verify-browser"
+        ]
+      },
+      "verify-tests": {
+        "id": "verify-tests",
+        "parentId": "completed-verification",
+        "text": "31 项自动化测试通过",
+        "children": []
+      },
+      "verify-build": {
+        "id": "verify-build",
+        "parentId": "completed-verification",
+        "text": "生产构建成功",
+        "children": []
+      },
+      "verify-live": {
+        "id": "verify-live",
+        "parentId": "completed-verification",
+        "text": "运行接口与版本冲突保护已验证",
+        "children": []
+      },
+      "verify-browser": {
+        "id": "verify-browser",
+        "parentId": "completed-verification",
+        "text": "本地页面无控制台错误",
+        "children": []
+      },
+      "real-test": {
+        "id": "real-test",
+        "parentId": "mindflow-project-status",
+        "text": "本次真实验收",
+        "children": [
+          "test-input",
+          "test-analysis",
+          "test-output",
+          "test-review"
+        ],
+        "color": "#3d8ba8",
+        "side": "right"
+      },
+      "test-input": {
+        "id": "test-input",
+        "parentId": "real-test",
+        "text": "输入：项目完成与未完成内容",
+        "children": []
+      },
+      "test-analysis": {
+        "id": "test-analysis",
+        "parentId": "real-test",
+        "text": "Codex 归纳产品状态与优先级",
+        "children": []
+      },
+      "test-output": {
+        "id": "test-output",
+        "parentId": "real-test",
+        "text": "输出：完整可编辑思维导图",
+        "children": []
+      },
+      "test-review": {
+        "id": "test-review",
+        "parentId": "real-test",
+        "text": "当前阶段：等待用户审核应用",
+        "children": []
+      },
+      "unfinished": {
+        "id": "unfinished",
+        "parentId": "mindflow-project-status",
+        "text": "未完成",
+        "children": [
+          "unfinished-main-flow",
+          "unfinished-review",
+          "unfinished-page-ai",
+          "unfinished-reliability",
+          "unfinished-export",
+          "unfinished-later"
+        ],
+        "color": "#d48742",
+        "side": "left"
+      },
+      "unfinished-main-flow": {
+        "id": "unfinished-main-flow",
+        "parentId": "unfinished",
+        "text": "Codex 主链路深度验收",
+        "children": [
+          "accept-real-cases",
+          "accept-map-quality",
+          "accept-branch-flow",
+          "accept-auto-rebase"
+        ]
+      },
+      "accept-real-cases": {
+        "id": "accept-real-cases",
+        "parentId": "unfinished-main-flow",
+        "text": "更多真实需求案例",
+        "children": []
+      },
+      "accept-map-quality": {
+        "id": "accept-map-quality",
+        "parentId": "unfinished-main-flow",
+        "text": "优化节点层级与信息密度",
+        "children": []
+      },
+      "accept-branch-flow": {
+        "id": "accept-branch-flow",
+        "parentId": "unfinished-main-flow",
+        "text": "选中分支的连续修改体验",
+        "children": []
+      },
+      "accept-auto-rebase": {
+        "id": "accept-auto-rebase",
+        "parentId": "unfinished-main-flow",
+        "text": "冲突后自动重读并重建方案",
+        "children": []
+      },
+      "unfinished-review": {
+        "id": "unfinished-review",
+        "parentId": "unfinished",
+        "text": "审核体验增强",
+        "children": [
+          "review-highlight",
+          "review-diff",
+          "review-partial",
+          "review-source"
+        ]
+      },
+      "review-highlight": {
+        "id": "review-highlight",
+        "parentId": "unfinished-review",
+        "text": "画布高亮新增、修改、移动和删除",
+        "children": []
+      },
+      "review-diff": {
+        "id": "review-diff",
+        "parentId": "unfinished-review",
+        "text": "修改前后差异预览",
+        "children": []
+      },
+      "review-partial": {
+        "id": "review-partial",
+        "parentId": "unfinished-review",
+        "text": "逐项接受或拒绝",
+        "children": []
+      },
+      "review-source": {
+        "id": "review-source",
+        "parentId": "unfinished-review",
+        "text": "显示 Codex、页面 AI 等方案来源",
+        "children": []
+      },
+      "unfinished-page-ai": {
+        "id": "unfinished-page-ai",
+        "parentId": "unfinished",
+        "text": "页面 AI 备用执行端",
+        "children": [
+          "page-ai-config",
+          "page-ai-worker",
+          "page-ai-prompt",
+          "page-ai-errors"
+        ]
+      },
+      "page-ai-config": {
+        "id": "page-ai-config",
+        "parentId": "unfinished-page-ai",
+        "text": "兼容地址、API Key 与模型配置",
+        "children": []
+      },
+      "page-ai-worker": {
+        "id": "page-ai-worker",
+        "parentId": "unfinished-page-ai",
+        "text": "本地请求执行器",
+        "children": []
+      },
+      "page-ai-prompt": {
+        "id": "page-ai-prompt",
+        "parentId": "unfinished-page-ai",
+        "text": "提示词与输出校验",
+        "children": []
+      },
+      "page-ai-errors": {
+        "id": "page-ai-errors",
+        "parentId": "unfinished-page-ai",
+        "text": "超时、重试与错误提示",
+        "children": []
+      },
+      "unfinished-reliability": {
+        "id": "unfinished-reliability",
+        "parentId": "unfinished",
+        "text": "数据可靠性与版本管理",
+        "children": [
+          "reliability-snapshots",
+          "reliability-history",
+          "reliability-restore",
+          "reliability-recovery"
+        ]
+      },
+      "reliability-snapshots": {
+        "id": "reliability-snapshots",
+        "parentId": "unfinished-reliability",
+        "text": "自动快照",
+        "children": []
+      },
+      "reliability-history": {
+        "id": "reliability-history",
+        "parentId": "unfinished-reliability",
+        "text": "可视化历史版本列表",
+        "children": []
+      },
+      "reliability-restore": {
+        "id": "reliability-restore",
+        "parentId": "unfinished-reliability",
+        "text": "恢复任意历史版本",
+        "children": []
+      },
+      "reliability-recovery": {
+        "id": "reliability-recovery",
+        "parentId": "unfinished-reliability",
+        "text": "异常退出与损坏恢复",
+        "children": []
+      },
+      "unfinished-export": {
+        "id": "unfinished-export",
+        "parentId": "unfinished",
+        "text": "静态导出",
+        "children": [
+          "export-png",
+          "export-svg",
+          "export-pdf",
+          "export-markdown"
+        ]
+      },
+      "export-png": {
+        "id": "export-png",
+        "parentId": "unfinished-export",
+        "text": "PNG",
+        "children": []
+      },
+      "export-svg": {
+        "id": "export-svg",
+        "parentId": "unfinished-export",
+        "text": "SVG",
+        "children": []
+      },
+      "export-pdf": {
+        "id": "export-pdf",
+        "parentId": "unfinished-export",
+        "text": "PDF",
+        "children": []
+      },
+      "export-markdown": {
+        "id": "export-markdown",
+        "parentId": "unfinished-export",
+        "text": "Markdown",
+        "children": []
+      },
+      "unfinished-later": {
+        "id": "unfinished-later",
+        "parentId": "unfinished",
+        "text": "后续能力",
+        "children": [
+          "later-mermaid",
+          "later-map-flow-link",
+          "later-visual"
+        ]
+      },
+      "later-mermaid": {
+        "id": "later-mermaid",
+        "parentId": "unfinished-later",
+        "text": "Mermaid 流程图",
+        "children": []
+      },
+      "later-map-flow-link": {
+        "id": "later-map-flow-link",
+        "parentId": "unfinished-later",
+        "text": "思维导图与流程图关联",
+        "children": []
+      },
+      "later-visual": {
+        "id": "later-visual",
+        "parentId": "unfinished-later",
+        "text": "页面视觉风格升级",
+        "children": []
+      },
+      "next-priorities": {
+        "id": "next-priorities",
+        "parentId": "mindflow-project-status",
+        "text": "下一步优先级",
+        "children": [
+          "priority-p0-acceptance",
+          "priority-p0-review",
+          "priority-p1-reliability",
+          "priority-p1-page-ai",
+          "priority-p2-export",
+          "priority-p2-mermaid"
+        ],
+        "color": "#c35d64",
+        "side": "left"
+      },
+      "priority-p0-acceptance": {
+        "id": "priority-p0-acceptance",
+        "parentId": "next-priorities",
+        "text": "P0：完成主链路真实验收",
+        "children": [],
+        "notes": "先验证需求分析结果能稳定生成高质量、可编辑的思维导图。"
+      },
+      "priority-p0-review": {
+        "id": "priority-p0-review",
+        "parentId": "next-priorities",
+        "text": "P0：增强 AI 修改审核体验",
+        "children": []
+      },
+      "priority-p1-reliability": {
+        "id": "priority-p1-reliability",
+        "parentId": "next-priorities",
+        "text": "P1：快照、历史版本与恢复",
+        "children": []
+      },
+      "priority-p1-page-ai": {
+        "id": "priority-p1-page-ai",
+        "parentId": "next-priorities",
+        "text": "P1：实现页面 AI 备用执行器",
+        "children": []
+      },
+      "priority-p2-export": {
+        "id": "priority-p2-export",
+        "parentId": "next-priorities",
+        "text": "P2：静态导出",
+        "children": []
+      },
+      "priority-p2-mermaid": {
+        "id": "priority-p2-mermaid",
+        "parentId": "next-priorities",
+        "text": "P2：Mermaid 流程图",
+        "children": []
+      },
+      "constraints": {
+        "id": "constraints",
+        "parentId": "mindflow-project-status",
+        "text": "已确定的产品约束",
+        "children": [
+          "constraint-no-openclaw",
+          "constraint-manual-first",
+          "constraint-incremental",
+          "constraint-page-ai-secondary",
+          "constraint-style",
+          "constraint-mermaid-later"
+        ],
+        "color": "#797d86",
+        "side": "left"
+      },
+      "constraint-no-openclaw": {
+        "id": "constraint-no-openclaw",
+        "parentId": "constraints",
+        "text": "不接入 OpenClaw 及相关能力",
+        "children": []
+      },
+      "constraint-manual-first": {
+        "id": "constraint-manual-first",
+        "parentId": "constraints",
+        "text": "人工编辑权优先",
+        "children": []
+      },
+      "constraint-incremental": {
+        "id": "constraint-incremental",
+        "parentId": "constraints",
+        "text": "后续修改优先使用增量操作",
+        "children": []
+      },
+      "constraint-page-ai-secondary": {
+        "id": "constraint-page-ai-secondary",
+        "parentId": "constraints",
+        "text": "页面 AI 保持次要入口",
+        "children": []
+      },
+      "constraint-style": {
+        "id": "constraint-style",
+        "parentId": "constraints",
+        "text": "当前不模仿参考项目页面样式",
+        "children": []
+      },
+      "constraint-mermaid-later": {
+        "id": "constraint-mermaid-later",
+        "parentId": "constraints",
+        "text": "Mermaid 放在思维导图核心完成之后",
+        "children": []
+      }
+    },
+    "createdAt": "2026-08-08T05:53:43.206Z",
+    "updatedAt": "2026-08-08T06:39:35.188Z",
+    "layoutMode": "left-right"
+  }
+}

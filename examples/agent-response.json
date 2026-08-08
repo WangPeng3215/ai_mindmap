@@ -1,0 +1,10 @@
+{
+  "reply": "已经分析需求并补充了脑图说明。",
+  "operations": [
+    {
+      "type": "update_node",
+      "id": "root",
+      "patch": { "notes": "由本地智能体请求队列完成" }
+    }
+  ]
+}

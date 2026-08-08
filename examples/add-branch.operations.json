@@ -1,0 +1,14 @@
+{
+  "operations": [
+    {
+      "type": "add_node",
+      "parentId": "root",
+      "node": { "id": "risks", "text": "主要风险" }
+    },
+    {
+      "type": "add_node",
+      "parentId": "risks",
+      "node": { "id": "quality", "text": "内容质量不稳定" }
+    }
+  ]
+}
