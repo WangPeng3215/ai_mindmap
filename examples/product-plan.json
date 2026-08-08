@@ -1,0 +1,42 @@
+{
+  "title": "AI 写作产品 MVP",
+  "root": {
+    "id": "root",
+    "text": "AI 写作产品 MVP",
+    "children": [
+      {
+        "id": "users",
+        "text": "目标用户",
+        "children": [
+          { "id": "creators", "text": "自媒体创作者" },
+          { "id": "marketing", "text": "小型营销团队" }
+        ]
+      },
+      {
+        "id": "problems",
+        "text": "核心问题",
+        "children": [
+          { "id": "ideas", "text": "选题枯竭" },
+          { "id": "drafting", "text": "初稿耗时" }
+        ]
+      },
+      {
+        "id": "features",
+        "text": "首版能力",
+        "children": [
+          { "id": "outline", "text": "大纲生成" },
+          { "id": "rewrite", "text": "段落改写" },
+          { "id": "tone", "text": "语气适配" }
+        ]
+      },
+      {
+        "id": "success",
+        "text": "验证指标",
+        "children": [
+          { "id": "activation", "text": "首次完成文章" },
+          { "id": "retention", "text": "七日持续使用" }
+        ]
+      }
+    ]
+  }
+}
