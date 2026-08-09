@@ -269,4 +269,71 @@ describe('local agent API', () => {
     expect(history.body.snapshots).toHaveLength(5);
     expect(history.body.snapshots.map((snapshot) => snapshot.revision).sort((a, b) => a - b)).toEqual([2, 3, 4, 5, 6]);
   });
-});
+
+  it('creates and switches between independent canvases', async () => {
+    const baseUrl = await startApi();
+    const initialWorkspace = await json(baseUrl, '/api/v1/canvases');
+    expect(initialWorkspace.response.status).toBe(200);
+    expect(initialWorkspace.body.canvases).toHaveLength(1);
+    const initialId = initialWorkspace.body.activeCanvasId;
+    const initialDocument = await json(baseUrl, '/api/v1/mindmaps/current');
+
+    const created = await json(baseUrl, '/api/v1/canvases', {
+      method: 'POST',
+      body: JSON.stringify({ title: '第二张画布' }),
+    });
+    expect(created.response.status).toBe(201);
+    expect(created.body.activeCanvasId).not.toBe(initialId);
+
+    await json(baseUrl, '/api/v1/mindmaps/current', {
+      method: 'PUT',
+      body: JSON.stringify({ title: '第二张画布内容', root: { id: 'second-root', text: '第二张画布内容' } }),
+    });
+    const switched = await json(baseUrl, `/api/v1/canvases/${initialId}/activate`, { method: 'POST' });
+    expect(switched.response.status).toBe(200);
+    expect(switched.body.document.title).toBe(initialDocument.body.document.title);
+    expect(switched.body.document.nodes['second-root']).toBeUndefined();
+  });
+
+  it('duplicates, renames, deletes, and exports canvases as a workspace', async () => {
+    const baseUrl = await startApi();
+    const initial = await json(baseUrl, '/api/v1/canvases');
+    const sourceId = initial.body.activeCanvasId;
+    const duplicated = await json(baseUrl, `/api/v1/canvases/${sourceId}/duplicate`, { method: 'POST' });
+    const copyId = duplicated.body.activeCanvasId;
+    expect(copyId).not.toBe(sourceId);
+
+    const renamed = await json(baseUrl, `/api/v1/canvases/${copyId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title: '需求分析副本' }),
+    });
+    expect(renamed.body.canvas.title).toBe('需求分析副本');
+
+    const exported = await json(baseUrl, '/api/v1/workspace/export');
+    expect(exported.body.canvases).toHaveLength(2);
+    expect(exported.body.canvases.every((canvas) => canvas.document?.rootId)).toBe(true);
+
+    await json(baseUrl, `/api/v1/canvases/${sourceId}/activate`, { method: 'POST' });
+    const removed = await json(baseUrl, `/api/v1/canvases/${copyId}`, { method: 'DELETE' });
+    expect(removed.response.status).toBe(200);
+    expect(removed.body.canvases).toHaveLength(1);
+  });
+  it('keeps snapshot history isolated per canvas', async () => {
+    const baseUrl = await startApi();
+    const initial = await json(baseUrl, '/api/v1/canvases');
+    const firstId = initial.body.activeCanvasId;
+    await json(baseUrl, '/api/v1/mindmaps/current', {
+      method: 'PUT',
+      body: JSON.stringify({ title: '第一画布版本', root: { id: 'first-root', text: '第一画布版本' } }),
+    });
+    const firstHistory = await json(baseUrl, '/api/v1/mindmaps/snapshots');
+    expect(firstHistory.body.snapshots.length).toBeGreaterThan(0);
+
+    await json(baseUrl, '/api/v1/canvases', { method: 'POST', body: JSON.stringify({ title: '第二画布' }) });
+    const secondHistory = await json(baseUrl, '/api/v1/mindmaps/snapshots');
+    expect(secondHistory.body.snapshots).toHaveLength(0);
+
+    await json(baseUrl, `/api/v1/canvases/${firstId}/activate`, { method: 'POST' });
+    const restoredHistory = await json(baseUrl, '/api/v1/mindmaps/snapshots');
+    expect(restoredHistory.body.snapshots).toEqual(firstHistory.body.snapshots);
+  });});

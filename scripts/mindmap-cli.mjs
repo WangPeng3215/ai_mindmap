@@ -55,6 +55,8 @@ function help() {
 
 Usage:
   npm run mindmap -- status
+  npm run mindmap -- canvases
+  npm run mindmap -- switch <canvas-id>
   npm run mindmap -- read [node-id]
   npm run mindmap -- pending
   npm run mindmap -- apply <map.json>
@@ -77,14 +79,21 @@ try {
     case 'status': {
       const health = await request('/api/v1/health');
       const current = await request('/api/v1/mindmaps/current');
-      print({ ...health, current: { id: current.document.id, title: current.document.title, revision: current.document.revision } });
+      const workspace = await request('/api/v1/canvases');
+      print({ ...health, activeCanvasId: workspace.activeCanvasId, current: { id: current.document.id, title: current.document.title, revision: current.document.revision } });
       break;
     }
-    case 'pending':
+    case 'canvases':
+      print(await request('/api/v1/canvases'));
+      break;
+    case 'switch':
+      print(await request(`/api/v1/canvases/${encodeURIComponent(parsed.canvasId)}/activate`, { method: 'POST' }));
+      break;    case 'pending':
       print(await request('/api/v1/requests?status=pending'));
       break;
     case 'read': {
       const current = await request('/api/v1/mindmaps/current');
+      const workspace = await request('/api/v1/canvases');
       print(parsed.nodeId ? branchView(current.document, parsed.nodeId) : current);
       break;
     }

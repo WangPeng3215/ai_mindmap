@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -8,15 +8,25 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { createFlowModel, lockNodeChangesToLayout } from '../domain/flow.js';
+import { BoundaryNode, SummaryNode } from './ExpressionNodes.jsx';
 import { MindNode } from './MindNode.jsx';
 
-const nodeTypes = { mindNode: MindNode };
+const nodeTypes = {
+  mindNode: MindNode,
+  boundaryNode: BoundaryNode,
+  summaryNode: SummaryNode,
+};
+const layoutLabels = { 'left-right': '思维导图', 'top-bottom': '上下布局', architecture: '架构图' };
 
 export function MindMapCanvas({
   document,
-  selectedId,
-  onSelect,
+  selectedIds = [],
+  selectedExpression = null,
+  onSelectNode,
+  onSelectExpression,
+  onClearSelection,
   onEditNode,
+  onEditExpression,
   onAddChild,
   onToggleCollapse,
   onReorderNode,
@@ -29,21 +39,54 @@ export function MindMapCanvas({
   onExitPreview,
 }) {
   const model = useMemo(() => createFlowModel(document), [document]);
+  const [editingSummaryId, setEditingSummaryId] = useState(null);
+  const selectedNodeSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const decoratedNodes = useMemo(
-    () => model.nodes.map((node) => ({
-      ...node,
-      selected: node.id === selectedId,
-      data: {
-        ...node.data,
-        onEdit: onEditNode,
-        onAddChild,
-        onToggleCollapse,
-        previewMode,
-        changeType: previewChanges[node.id] || null,
-      },
-      draggable: previewMode ? false : node.draggable,
-    })),
-    [model.nodes, onAddChild, onEditNode, onToggleCollapse, previewChanges, previewMode, selectedId],
+    () => model.nodes.map((node) => {
+      const kind = node.data?.kind;
+      const selected = kind
+        ? selectedExpression?.type === kind && selectedExpression.id === node.data.expressionId
+        : selectedNodeSet.has(node.id);
+      return {
+        ...node,
+        selected,
+        data: {
+          ...node.data,
+          onEdit: onEditNode,
+          onEditExpression,
+          forceEditing: kind === 'summary' && editingSummaryId === node.data.expressionId,
+          onFinishExpressionEdit: () => setEditingSummaryId(null),
+          onAddChild,
+          onToggleCollapse,
+          previewMode,
+          changeType: previewChanges[node.id] || null,
+        },
+        draggable: previewMode ? false : node.draggable,
+      };
+    }),
+    [
+      model.nodes,
+      onAddChild,
+      onEditExpression,
+      onEditNode,
+      onToggleCollapse,
+      previewChanges,
+      previewMode,
+      selectedExpression,
+      selectedNodeSet,
+    ],
+  );
+  const decoratedEdges = useMemo(
+    () => model.edges.map((edge) => {
+      const isRelationship = edge.data?.kind === 'relationship';
+      const selected = isRelationship
+        && selectedExpression?.type === 'relationship'
+        && selectedExpression.id === edge.data.expressionId;
+      return selected
+        ? { ...edge, selected: true, style: { ...edge.style, strokeWidth: 3 } }
+        : edge;
+    }),
+    [model.edges, selectedExpression],
   );
   const [nodes, setNodes, onNodesChange] = useNodesState(decoratedNodes);
 
@@ -78,16 +121,35 @@ export function MindMapCanvas({
   }, [decoratedNodes, document.rootId, layoutMode, onNodesChange]);
 
   return (
-    <div className="canvas-wrap">
+    <div className="canvas-wrap" style={{ background: model.theme.background, fontFamily: model.theme.fontFamily }}>
       <ReactFlow
         nodes={nodes}
-        edges={model.edges}
+        edges={decoratedEdges}
         nodeTypes={nodeTypes}
         onNodesChange={onAlignedNodesChange}
-        onNodeClick={(_event, node) => onSelect(node.id)}
-        onPaneClick={() => onSelect(null)}
+        onNodeClick={(event, node) => {
+          if (node.data?.kind) {
+            onSelectExpression(node.data.kind, node.data.expressionId);
+            return;
+          }
+          onSelectNode(node.id, event.ctrlKey || event.metaKey);
+        }}
+        onNodeDoubleClick={(_event, node) => {
+          if (!previewMode && node.data?.kind === 'summary') {
+            onSelectExpression('summary', node.data.expressionId);
+            setEditingSummaryId(node.data.expressionId);
+          }
+        }}
+        onEdgeClick={(_event, edge) => {
+          if (edge.data?.kind === 'relationship') {
+            onSelectExpression('relationship', edge.data.expressionId);
+          }
+        }}
+        onPaneClick={onClearSelection}
         onNodeDrag={previewMode ? undefined : onBranchDrag}
-        onNodeDragStop={previewMode ? undefined : (_event, node) => onReorderNode(node.id, node.position)}
+        onNodeDragStop={previewMode ? undefined : (_event, node) => {
+          if (document.nodes[node.id]) onReorderNode(node.id, node.position);
+        }}
         nodesDraggable={!previewMode}
         nodesConnectable={false}
         onInit={onReady}
@@ -98,7 +160,7 @@ export function MindMapCanvas({
         proOptions={{ hideAttribution: true }}
         deleteKeyCode={null}
       >
-        <Background color="#d8d9d5" gap={24} size={1} variant={BackgroundVariant.Dots} />
+        <Background color={model.theme.gridColor} gap={24} size={1} variant={BackgroundVariant.Dots} />
         <Controls position="bottom-right" showInteractive={false} />
       </ReactFlow>
       {previewMode && (
@@ -110,8 +172,10 @@ export function MindMapCanvas({
           <button type="button" onClick={onExitPreview}>退出预览</button>
         </div>
       )}
-      <div className="canvas-hint">
-        双击编辑 · Tab 添加子节点 · Enter 添加同级 · 纵向拖动排序
+      <div className="canvas-statusbar">
+        <span className="canvas-mode">{layoutLabels[layoutMode] || '思维导图'}</span>
+        <span className="canvas-hint">双击编辑 · Ctrl/Command 多选 · Tab 添加子节点 · Enter 添加同级 · 纵向拖动排序</span>
+        <span className="canvas-status">本地画布</span>
       </div>
     </div>
   );

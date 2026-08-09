@@ -4,7 +4,7 @@ import { CaretRight, Plus } from '@phosphor-icons/react';
 
 function MindNodeComponent({ data, selected }) {
   const {
-    mindNode, isRoot, side, onEdit, onAddChild, onToggleCollapse, previewMode, changeType,
+    mindNode, isRoot, side, nodeStyle, onEdit, onAddChild, onToggleCollapse, previewMode, changeType,
   } = data;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(mindNode.text);
@@ -24,7 +24,8 @@ function MindNodeComponent({ data, selected }) {
 
   return (
     <div
-      className={`mind-node ${isRoot ? 'mind-node-root' : ''} ${selected ? 'is-selected' : ''} ${previewMode ? 'is-preview' : ''} ${changeType ? `change-${changeType}` : ''}`}
+      style={{ background: nodeStyle?.fill, borderColor: nodeStyle?.border, borderRadius: nodeStyle?.shape === 'pill' ? 999 : nodeStyle?.radius, color: nodeStyle?.textColor, textAlign: nodeStyle?.textAlign, fontSize: nodeStyle?.fontSize, fontWeight: nodeStyle?.fontWeight, fontStyle: nodeStyle?.fontStyle, textDecoration: nodeStyle?.textDecoration, fontFamily: nodeStyle?.fontFamily, '--node-font-size': String(nodeStyle?.fontSize) + 'px', '--node-font-weight': nodeStyle?.fontWeight, '--node-text-align': nodeStyle?.textAlign, '--node-fill': nodeStyle?.fill, '--node-border': nodeStyle?.border }}
+      className={`mind-node shape-${nodeStyle?.shape || 'rounded'} ${isRoot ? 'mind-node-root' : ''} ${selected ? 'is-selected' : ''} ${previewMode ? 'is-preview' : ''} ${changeType ? `change-${changeType}` : ''}`}
       onDoubleClick={() => { if (!previewMode) setEditing(true); }}
     >
       <Handle id="target-left" type="target" position={Position.Left} className="node-handle" />

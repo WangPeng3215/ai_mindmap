@@ -35,4 +35,37 @@ describe('mind map exports', () => {
     expect(safeExportName('需求/方案: v1', 'svg')).toBe('需求-方案- v1.svg');
     expect(safeExportName('', 'md')).toBe('mindmap.md');
   });
+
+  it('preserves the global theme in SVG exports', () => {
+    const document = sampleDocument();
+    document.theme = {
+      background: '#101412',
+      fontFamily: 'Georgia, serif',
+      branchStrategy: 'rainbow',
+      palette: ['#ff3366', '#22aa88'],
+      defaultNodeStyle: { fill: '#202824', border: '#4b5a52', textColor: '#f5f7f6', radius: 4 },
+    };
+
+    const svg = documentToSvg(document);
+
+    expect(svg).toContain('fill="#101412"');
+    expect(svg).toContain('stroke="#ff3366"');
+    expect(svg).toContain('fill="#202824"');
+    expect(svg).toContain('font-family="Georgia, serif"');
+  });});
+
+describe('relationship expression exports', () => {
+  it('includes relationship lines, boundaries and summaries in SVG exports', () => {
+    const document = sampleDocument();
+    document.relationships.push({ id: 'rel-1', sourceId: 'first', targetId: 'second', label: '依赖', arrow: true });
+    document.boundaries.push({ id: 'box-1', nodeIds: ['first', 'second'], label: '阶段范围' });
+    document.summaries.push({ id: 'sum-1', nodeIds: ['first', 'second'], text: '两步完成' });
+    const svg = documentToSvg(document);
+    expect(svg).toContain('data-kind="relationship"');
+    expect(svg).toContain('依赖');
+    expect(svg).toContain('data-kind="boundary"');
+    expect(svg).toContain('阶段范围');
+    expect(svg).toContain('data-kind="summary"');
+    expect(svg).toContain('两步完成');
+  });
 });

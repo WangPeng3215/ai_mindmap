@@ -65,4 +65,35 @@ describe('mind-map layout', () => {
     const positions = layoutDocument(document, { force: true });
     expect(positions.left.x).toBeLessThan(0);
   });
-});
+
+  it('keeps custom-sized siblings from overlapping while preserving alignment', () => {
+    const document = createDocumentFromTree({
+      id: 'root',
+      text: '主题',
+      children: [
+        { id: 'a', text: 'A', side: 'right', style: { width: 360, height: 160 }, children: [{ id: 'a1', text: 'A1', style: { width: 320, height: 80 } }] },
+        { id: 'b', text: 'B', side: 'right', style: { width: 280, height: 140 } },
+      ],
+    });
+
+    const positions = layoutDocument(document, { force: true });
+
+    expect(positions.b.y - positions.a.y).toBeGreaterThanOrEqual(160);
+    expect(positions.a1.x - positions.a.x).toBeGreaterThanOrEqual(360);
+  });
+
+  it('uses node widths to prevent overlap in top-bottom layouts', () => {
+    const document = createDocumentFromTree({
+      id: 'root',
+      text: '主题',
+      children: [
+        { id: 'a', text: 'A', side: 'bottom', style: { width: 360, height: 80 } },
+        { id: 'b', text: 'B', side: 'bottom', style: { width: 300, height: 80 } },
+      ],
+    });
+
+    const positions = layoutDocument(document, { force: true, layout: 'top-bottom' });
+
+    expect(positions.b.x - positions.a.x).toBeGreaterThanOrEqual(360);
+    expect(positions.a.y).toBeGreaterThan(0);
+  });});

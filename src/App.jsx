@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { AgentPanel } from './components/AgentPanel.jsx';
+import { ExpressionInspector } from './components/ExpressionInspector.jsx';
 import { MindMapCanvas } from './components/MindMapCanvas.jsx';
 import { NodeInspector } from './components/NodeInspector.jsx';
 import { Topbar } from './components/Topbar.jsx';
+import { ThemePanel } from './components/ThemePanel.jsx';
 import { VersionHistoryPanel } from './components/VersionHistoryPanel.jsx';
 import { api } from './lib/api.js';
 import {
@@ -15,6 +17,7 @@ import {
 import {
   applyOperations,
   createDocumentFromTree,
+  DEFAULT_EDGE_STYLE,
   isMindMapDocument,
 } from './domain/mindmap.js';
 import { createProposalPreview } from './domain/proposal.js';
@@ -26,18 +29,34 @@ import {
   layoutDocument,
 } from './domain/layout.js';
 import { createHistory, historyReducer } from './state/history.js';
+import { resolveTheme, themeFromPreset } from './domain/theme.js';
 
 const clientId = globalThis.crypto.randomUUID();
+
+function isConsecutiveSiblingSelection(document, ids) {
+  if (!document || ids.length < 2) return false;
+  const nodes = ids.map((id) => document.nodes[id]).filter(Boolean);
+  if (nodes.length !== ids.length || !nodes[0].parentId) return false;
+  const parentId = nodes[0].parentId;
+  if (nodes.some((node) => node.parentId !== parentId)) return false;
+  const siblings = document.nodes[parentId].children;
+  const indexes = ids.map((id) => siblings.indexOf(id)).sort((a, b) => a - b);
+  return indexes.every((index, offset) => index === indexes[0] + offset);
+}
 
 export default function App() {
   const [history, dispatch] = useReducer(historyReducer, createHistory(null));
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState([]);
+  const [selectedExpression, setSelectedExpression] = useState(null);
   const [requests, setRequests] = useState([]);
   const [saveStatus, setSaveStatus] = useState('saved');
   const [connected, setConnected] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [preview, setPreview] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [workspace, setWorkspace] = useState({ canvases: [], activeCanvasId: '' });
+  const [themeOpen, setThemeOpen] = useState(false);
   const [snapshots, setSnapshots] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyBusyId, setHistoryBusyId] = useState('');
@@ -47,6 +66,37 @@ export default function App() {
   const importRef = useRef(null);
   const documentRef = useRef(null);
   documentRef.current = history.present;
+
+  const selectSingleNode = useCallback((id) => {
+    setSelectedId(id);
+    setSelectedNodeIds(id ? [id] : []);
+    setSelectedExpression(null);
+  }, []);
+
+  const selectNode = useCallback((id, multi = false) => {
+    if (!multi) {
+      selectSingleNode(id);
+      return;
+    }
+    setSelectedExpression(null);
+    setSelectedNodeIds((current) => {
+      const next = current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id];
+      setSelectedId(next[next.length - 1] || null);
+      return next;
+    });
+  }, [selectSingleNode]);
+
+  const selectExpression = useCallback((type, id) => {
+    setSelectedExpression({ type, id });
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedId(null);
+    setSelectedNodeIds([]);
+    setSelectedExpression(null);
+  }, []);
 
   const refreshRequests = useCallback(async () => {
     const result = await api.listRequests();
@@ -67,12 +117,13 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([api.getCurrent(), api.listRequests()])
-      .then(([mapResult, requestResult]) => {
+    Promise.all([api.getCurrent(), api.listRequests(), api.listCanvases()])
+      .then(([mapResult, requestResult, workspaceResult]) => {
         if (!active) return;
         dispatch({ type: 'reset', value: mapResult.document });
-        setSelectedId(mapResult.document.rootId);
+        selectSingleNode(mapResult.document.rootId);
         setRequests(requestResult.requests);
+        setWorkspace(workspaceResult);
         setPanelOpen(requestResult.requests.some((request) => request.status === 'review'));
         setConnected(true);
       })
@@ -85,7 +136,18 @@ export default function App() {
         setPreview(null);
         dispatch({ type: isAppliedProposal ? 'commit' : 'reset', value: payload.document });
       }
-      if (['request_created', 'request_updated', 'request_completed'].includes(type)) {
+      if (type === 'canvas_switched') {
+        setWorkspace({ canvases: payload.canvases, activeCanvasId: payload.activeCanvasId });
+        if (payload.document) {
+          setPreview(null);
+          dispatch({ type: 'reset', value: payload.document });
+          selectSingleNode(payload.document.rootId);
+        }
+        refreshRequests().catch(() => {});
+      }
+      if (type === 'canvas_updated') {
+        setWorkspace({ canvases: payload.canvases, activeCanvasId: payload.activeCanvasId });
+      }      if (['request_created', 'request_updated', 'request_completed'].includes(type)) {
         if (payload.request?.status === 'review') setPanelOpen(true);
         refreshRequests().catch(() => {});
       }
@@ -127,6 +189,62 @@ export default function App() {
     runOperations([{ type: 'update_node', id, patch }]);
   }, [runOperations]);
 
+  const createExpression = useCallback((type) => {
+    const id = type + '-' + globalThis.crypto.randomUUID();
+    if (type === 'relationship') {
+      if (selectedNodeIds.length !== 2) return;
+      runOperations([{
+        type: 'add_relationship',
+        relationship: { id, sourceId: selectedNodeIds[0], targetId: selectedNodeIds[1], label: '' },
+      }]);
+    } else if (type === 'boundary') {
+      runOperations([{ type: 'add_boundary', boundary: { id, nodeIds: selectedNodeIds, label: '' } }]);
+    } else {
+      runOperations([{ type: 'add_summary', summary: { id, nodeIds: selectedNodeIds, text: '概要' } }]);
+    }
+    setSelectedExpression({ type, id });
+  }, [runOperations, selectedNodeIds]);
+
+  const editExpression = useCallback((type, id, patch) => {
+    runOperations([{ type: 'update_' + type, id, patch }]);
+  }, [runOperations]);
+
+  const deleteExpression = useCallback((type, id) => {
+    runOperations([{ type: 'delete_' + type, id }]);
+    setSelectedExpression(null);
+  }, [runOperations]);
+
+  const editEdgeStyle = useCallback((patch) => {
+    const document = documentRef.current;
+    if (!document || preview) return;
+    commitDocument({
+      ...document,
+      edgeStyle: { ...DEFAULT_EDGE_STYLE, ...(document.edgeStyle || {}), ...patch },
+      updatedAt: new Date().toISOString(),
+    });
+  }, [commitDocument, preview]);
+
+  const editTheme = useCallback((patch) => {
+    const document = documentRef.current;
+    if (!document || preview) return;
+    const current = resolveTheme(document.theme);
+    commitDocument({
+      ...document,
+      theme: {
+        ...current,
+        ...patch,
+        defaultNodeStyle: patch.defaultNodeStyle || current.defaultNodeStyle,
+        rootNodeStyle: patch.rootNodeStyle || current.rootNodeStyle,
+      },
+      updatedAt: new Date().toISOString(),
+    });
+  }, [commitDocument, preview]);
+
+  const applyThemePreset = useCallback((presetId) => {
+    const document = documentRef.current;
+    if (!document || preview) return;
+    commitDocument({ ...document, theme: themeFromPreset(presetId), updatedAt: new Date().toISOString() });
+  }, [commitDocument, preview]);
   const addChild = useCallback((parentId) => {
     const document = documentRef.current;
     if (!document) return;
@@ -140,7 +258,7 @@ export default function App() {
       parentId,
       node: { id, text: '新主题', ...(side ? { side } : {}) },
     }]);
-    setSelectedId(id);
+    selectSingleNode(id);
   }, [runOperations]);
 
   const deleteNode = useCallback((id) => {
@@ -148,7 +266,7 @@ export default function App() {
     if (!document || id === document.rootId) return;
     const parentId = document.nodes[id].parentId;
     runOperations([{ type: 'delete_node', id }]);
-    setSelectedId(parentId);
+    selectSingleNode(parentId);
   }, [runOperations]);
 
   const addSibling = useCallback((id) => {
@@ -190,6 +308,9 @@ export default function App() {
       } else if (event.key === 'Enter' && selectedId) {
         event.preventDefault();
         addSibling(selectedId);
+      } else if ((event.key === 'Delete' || event.key === 'Backspace') && selectedExpression) {
+        event.preventDefault();
+        deleteExpression(selectedExpression.type, selectedExpression.id);
       } else if ((event.key === 'Delete' || event.key === 'Backspace') && selectedId) {
         event.preventDefault();
         deleteNode(selectedId);
@@ -215,9 +336,66 @@ export default function App() {
 
   function updateTitle(title) {
     if (preview || !history.present) return;
+    setWorkspace((current) => ({ ...current, canvases: current.canvases.map((canvas) => canvas.id === current.activeCanvasId ? { ...canvas, title } : canvas) }));
     commitDocument({ ...history.present, title, updatedAt: new Date().toISOString() });
   }
 
+  async function activateCanvas(id) {
+    if (!id || id === workspace.activeCanvasId) return;
+    try {
+      const result = await api.activateCanvas(id);
+      setWorkspace({ canvases: result.canvases, activeCanvasId: result.activeCanvasId });
+      dispatch({ type: 'reset', value: result.document });
+      selectSingleNode(result.document.rootId);
+      setPreview(null);
+      setHistoryOpen(false);
+      setThemeOpen(false);
+      await refreshRequests();
+      requestAnimationFrame(() => flowRef.current?.fitView({ padding: 0.2, duration: 250 }));
+    } catch (cause) { setError(cause.message); }
+  }
+
+  async function createCanvas() {
+    try {
+      const result = await api.createCanvas(`新画布 ${workspace.canvases.length + 1}`);
+      setWorkspace({ canvases: result.canvases, activeCanvasId: result.activeCanvasId });
+      dispatch({ type: 'reset', value: result.document });
+      selectSingleNode(result.document.rootId);
+      setRequests([]);
+      setPreview(null);
+    } catch (cause) { setError(cause.message); }
+  }
+
+  async function duplicateCanvas() {
+    try {
+      const result = await api.duplicateCanvas(workspace.activeCanvasId);
+      setWorkspace({ canvases: result.canvases, activeCanvasId: result.activeCanvasId });
+      dispatch({ type: 'reset', value: result.document });
+      selectSingleNode(result.document.rootId);
+      setRequests([]);
+      setPreview(null);
+    } catch (cause) { setError(cause.message); }
+  }
+
+  async function deleteCanvas() {
+    if (workspace.canvases.length <= 1 || !globalThis.confirm('确定删除当前画布吗？该画布的历史版本也将不再显示。')) return;
+    try {
+      const result = await api.deleteCanvas(workspace.activeCanvasId);
+      setWorkspace({ canvases: result.canvases, activeCanvasId: result.activeCanvasId });
+      dispatch({ type: 'reset', value: result.document });
+      selectSingleNode(result.document.rootId);
+      setPreview(null);
+      await refreshRequests();
+    } catch (cause) { setError(cause.message); }
+  }
+
+  async function exportWorkspace() {
+    try {
+      const bundle = await api.exportWorkspace();
+      downloadBlob(new Blob([`${JSON.stringify(bundle, null, 2)}\n`], { type: 'application/json' }), 'mindflow-workspace.json');
+      setNotice('已导出整个工作区');
+    } catch (cause) { setError(cause.message); }
+  }
   function autoLayout() {
     if (preview) return;
     const document = structuredClone(history.present);
@@ -277,7 +455,7 @@ export default function App() {
         setNotice(result.message || '历史版本内容与当前版本完全一致，无需恢复');
       } else {
         dispatch({ type: 'commit', value: result.document });
-        setSelectedId(result.document.rootId);
+        selectSingleNode(result.document.rootId);
       }
       await refreshSnapshots();
     } catch (cause) {
@@ -291,7 +469,7 @@ export default function App() {
     try {
       const nextPreview = createProposalPreview(history.present, request, operationIndexes);
       setPreview({ requestId: request.id, operationIndexes, ...nextPreview });
-      setSelectedId(nextPreview.document.rootId);
+      selectSingleNode(nextPreview.document.rootId);
       requestAnimationFrame(() => flowRef.current?.fitView({ padding: 0.2, duration: 350 }));
     } catch (cause) {
       setError(cause.message);
@@ -300,7 +478,7 @@ export default function App() {
 
   function exitPreview() {
     setPreview(null);
-    setSelectedId(history.present.rootId);
+    selectSingleNode(history.present.rootId);
     requestAnimationFrame(() => flowRef.current?.fitView({ padding: 0.2, duration: 350 }));
   }
 
@@ -340,9 +518,9 @@ export default function App() {
       const payload = JSON.parse(await file.text());
       const document = isMindMapDocument(payload)
         ? payload
-        : createDocumentFromTree(payload.root || payload, { title: payload.title });
+        : createDocumentFromTree(payload.root || payload, { title: payload.title, theme: payload.theme, edgeStyle: payload.edgeStyle });
       dispatch({ type: 'reset', value: document });
-      setSelectedId(document.rootId);
+      selectSingleNode(document.rootId);
       persist(document);
     } catch (cause) {
       setError(`导入失败：${cause.message}`);
@@ -360,16 +538,39 @@ export default function App() {
 
   const canvasDocument = preview?.document || history.present;
   const layoutMode = getLayoutMode(canvasDocument);
+  const canAddRangeExpression = isConsecutiveSiblingSelection(canvasDocument, selectedNodeIds);
+  const canAddRelationship = selectedNodeIds.length === 2;
+  const expressionCollection = selectedExpression?.type === 'relationship'
+    ? 'relationships'
+    : selectedExpression?.type === 'boundary'
+      ? 'boundaries'
+      : 'summaries';
+  const selectedExpressionValue = selectedExpression
+    ? (canvasDocument[expressionCollection] || []).find((item) => item.id === selectedExpression.id)
+    : null;
   return (
     <main className="app-shell">
       <Topbar
         title={canvasDocument.title}
         onTitleChange={updateTitle}
         saveStatus={saveStatus}
+        canvases={workspace.canvases}
+        activeCanvasId={workspace.activeCanvasId}
+        onActivateCanvas={activateCanvas}
+        onCreateCanvas={createCanvas}
+        onDuplicateCanvas={duplicateCanvas}
+        onDeleteCanvas={deleteCanvas}
+        onExportWorkspace={exportWorkspace}
         canUndo={!preview && history.past.length > 0}
         canRedo={!preview && history.future.length > 0}
         onUndo={undo}
         onRedo={redo}
+        canAddBoundary={canAddRangeExpression}
+        canAddSummary={canAddRangeExpression}
+        canAddRelationship={canAddRelationship}
+        onAddBoundary={() => createExpression('boundary')}
+        onAddSummary={() => createExpression('summary')}
+        onAddRelationship={() => createExpression('relationship')}
         onLayout={autoLayout}
         layoutMode={layoutMode}
         onLayoutModeChange={changeLayoutMode}
@@ -377,6 +578,8 @@ export default function App() {
         onImport={() => importRef.current?.click()}
         onExport={exportMap}
         onHistory={openHistory}
+        themeOpen={themeOpen}
+        onToggleTheme={() => { setThemeOpen((value) => !value); setHistoryOpen(false); }}
         readOnly={Boolean(preview)}
         panelOpen={panelOpen}
         onTogglePanel={() => setPanelOpen((value) => !value)}
@@ -399,9 +602,13 @@ export default function App() {
         )}
         <MindMapCanvas
           document={canvasDocument}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
+          selectedIds={selectedNodeIds}
+          selectedExpression={selectedExpression}
+          onSelectNode={selectNode}
+          onSelectExpression={selectExpression}
+          onClearSelection={clearSelection}
           onEditNode={editNode}
+          onEditExpression={editExpression}
           onAddChild={addChild}
           onToggleCollapse={(id) => editNode(id, { collapsed: !history.present.nodes[id].collapsed })}
           onReorderNode={reorderNode}
@@ -413,6 +620,14 @@ export default function App() {
           onExitPreview={exitPreview}
           onReady={(instance) => { flowRef.current = instance; }}
         />
+        {themeOpen && !preview && (
+          <ThemePanel
+            theme={history.present.theme}
+            onChange={editTheme}
+            onPreset={applyThemePreset}
+            onClose={() => setThemeOpen(false)}
+          />
+        )}
         {historyOpen && !preview && (
           <VersionHistoryPanel
             snapshots={snapshots}
@@ -424,12 +639,26 @@ export default function App() {
             onClose={() => setHistoryOpen(false)}
           />
         )}
-        {!preview && !historyOpen && (
+        {!preview && !historyOpen && !themeOpen && selectedExpressionValue && (
+          <ExpressionInspector
+            type={selectedExpression.type}
+            expression={selectedExpressionValue}
+            selectedNodeIds={selectedNodeIds}
+            canReplaceRange={canAddRangeExpression}
+            canReplaceRelationship={canAddRelationship}
+            onChange={(patch) => editExpression(selectedExpression.type, selectedExpression.id, patch)}
+            onDelete={() => deleteExpression(selectedExpression.type, selectedExpression.id)}
+            onClose={() => setSelectedExpression(null)}
+          />
+        )}
+        {!preview && !historyOpen && !themeOpen && !selectedExpressionValue && (
           <NodeInspector
             node={selectedNode}
             isRoot={selectedId === history.present.rootId}
-            onClose={() => setSelectedId(null)}
+            onClose={() => selectSingleNode(null)}
             onChange={editNode}
+            edgeStyle={history.present.edgeStyle || DEFAULT_EDGE_STYLE}
+            onEdgeStyleChange={editEdgeStyle}
             onAddChild={addChild}
             onDelete={deleteNode}
           />

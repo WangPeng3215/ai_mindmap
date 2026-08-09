@@ -5,6 +5,8 @@ describe('mind-map CLI arguments', () => {
   it('parses file and request commands', () => {
     expect(parseCommand(['apply', 'map.json'])).toEqual({ command: 'apply', file: 'map.json' });
     expect(parseCommand(['read', 'branch-1'])).toEqual({ command: 'read', nodeId: 'branch-1' });
+    expect(parseCommand(['canvases'])).toEqual({ command: 'canvases' });
+    expect(parseCommand(['switch', 'canvas-1'])).toEqual({ command: 'switch', canvasId: 'canvas-1' });
     expect(parseCommand(['propose', 'proposal.json'])).toEqual({ command: 'propose', file: 'proposal.json' });
     expect(parseCommand(['apply-safe', 'proposal.json'])).toEqual({ command: 'apply-safe', file: 'proposal.json' });
     expect(parseCommand(['complete', 'request-1', 'reply.json'])).toEqual({

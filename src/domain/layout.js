@@ -1,3 +1,4 @@
+import { resolveNodeStyle } from './theme.js';
 const HORIZONTAL_GAP = 260;
 const VERTICAL_GAP = 108;
 
@@ -10,12 +11,6 @@ export const LAYOUT_MODES = {
 export function getLayoutMode(document, requested) {
   const mode = requested || document?.layoutMode;
   return Object.values(LAYOUT_MODES).includes(mode) ? mode : LAYOUT_MODES.LEFT_RIGHT;
-}
-
-function visibleLeafCount(document, id) {
-  const node = document.nodes[id];
-  if (node.collapsed || node.children.length === 0) return 1;
-  return node.children.reduce((sum, childId) => sum + visibleLeafCount(document, childId), 0);
 }
 
 function canonicalSide(side, mode) {
@@ -67,6 +62,26 @@ export function layoutDocument(document, options = {}) {
   const positions = {};
   const force = Boolean(options.force);
   const mode = getLayoutMode(document, options.layout);
+  const root = document.nodes[document.rootId];
+  const depthSizes = [];
+
+  function nodeSize(id) {
+    const node = document.nodes[id];
+    const style = resolveNodeStyle(node, document.theme, id === document.rootId);
+    return { width: Number(style.width), height: Number(style.height) };
+  }
+
+  function collectDepthSizes(id, depth) {
+    const size = nodeSize(id);
+    const current = depthSizes[depth] || { width: 0, height: 0 };
+    depthSizes[depth] = {
+      width: Math.max(current.width, size.width),
+      height: Math.max(current.height, size.height),
+    };
+    const node = document.nodes[id];
+    if (!node.collapsed) node.children.forEach((childId) => collectDepthSizes(childId, depth + 1));
+  }
+  collectDepthSizes(document.rootId, 0);
 
   function remember(id, calculated) {
     positions[id] = !force && document.nodes[id].position
@@ -74,35 +89,67 @@ export function layoutDocument(document, options = {}) {
       : calculated;
   }
 
-  remember(document.rootId, { x: 0, y: 0 });
-  const root = document.nodes[document.rootId];
-
-  if (mode === LAYOUT_MODES.ARCHITECTURE) {
-    const totalLeaves = root.children.reduce(
-      (sum, id) => sum + visibleLeafCount(document, id),
-      0,
-    );
-    let cursor = -((Math.max(totalLeaves, 1) - 1) * HORIZONTAL_GAP * 0.5);
-
-    function layoutBranch(id, depth, startX) {
-      const node = document.nodes[id];
-      const leaves = visibleLeafCount(document, id);
-      const width = leaves * HORIZONTAL_GAP;
-      const centerX = startX + (width - HORIZONTAL_GAP) * 0.5;
-      remember(id, { x: centerX, y: depth * VERTICAL_GAP });
-      if (!node.collapsed) {
-        let childCursor = startX;
-        for (const childId of node.children) {
-          layoutBranch(childId, depth + 1, childCursor);
-          childCursor += visibleLeafCount(document, childId) * HORIZONTAL_GAP;
-        }
+  function mainAxisPosition(depth, direction) {
+    let position = 0;
+    for (let level = 1; level <= depth; level += 1) {
+      if (mode === LAYOUT_MODES.LEFT_RIGHT) {
+        const reference = direction > 0 ? depthSizes[level - 1]?.width : depthSizes[level]?.width;
+        position += Math.max(HORIZONTAL_GAP, (reference || 148) + 80);
+      } else {
+        const reference = direction > 0 ? depthSizes[level - 1]?.height : depthSizes[level]?.height;
+        position += Math.max(VERTICAL_GAP, (reference || 48) + 40);
       }
     }
+    return direction * position;
+  }
 
-    for (const id of root.children) {
-      layoutBranch(id, 1, cursor);
-      cursor += visibleLeafCount(document, id) * HORIZONTAL_GAP;
+  function subtreeSpan(id) {
+    const node = document.nodes[id];
+    const size = nodeSize(id);
+    const crossSize = mode === LAYOUT_MODES.LEFT_RIGHT ? size.height : size.width;
+    const minimum = Math.max(
+      mode === LAYOUT_MODES.LEFT_RIGHT ? VERTICAL_GAP : HORIZONTAL_GAP,
+      crossSize + 32,
+    );
+    if (node.collapsed || node.children.length === 0) return minimum;
+    return Math.max(minimum, node.children.reduce((sum, childId) => sum + subtreeSpan(childId), 0));
+  }
+
+  function layoutBranch(id, depth, start, direction) {
+    const node = document.nodes[id];
+    const size = nodeSize(id);
+    const span = subtreeSpan(id);
+    const crossSize = mode === LAYOUT_MODES.LEFT_RIGHT ? size.height : size.width;
+    const crossPosition = start + (span - crossSize) * 0.5;
+    const mainPosition = mainAxisPosition(depth, direction);
+    remember(id, mode === LAYOUT_MODES.LEFT_RIGHT
+      ? { x: mainPosition, y: crossPosition }
+      : { x: crossPosition, y: mainPosition });
+    if (!node.collapsed) {
+      let childCursor = start;
+      for (const childId of node.children) {
+        layoutBranch(childId, depth + 1, childCursor, direction);
+        childCursor += subtreeSpan(childId);
+      }
     }
+  }
+
+  remember(document.rootId, { x: 0, y: 0 });
+  const rootCrossCenter = mode === LAYOUT_MODES.LEFT_RIGHT
+    ? nodeSize(document.rootId).height * 0.5
+    : nodeSize(document.rootId).width * 0.5;
+
+  function layoutGroup(branches, direction) {
+    const total = branches.reduce((sum, id) => sum + subtreeSpan(id), 0);
+    let cursor = rootCrossCenter - total * 0.5;
+    for (const id of branches) {
+      layoutBranch(id, 1, cursor, direction);
+      cursor += subtreeSpan(id);
+    }
+  }
+
+  if (mode === LAYOUT_MODES.ARCHITECTURE) {
+    layoutGroup(root.children, 1);
     return positions;
   }
 
@@ -110,38 +157,6 @@ export function layoutDocument(document, options = {}) {
     ? { top: [], bottom: [] }
     : { left: [], right: [] };
   root.children.forEach((id) => groups[getRootBranchSide(document, id, mode)].push(id));
-
-  function layoutGroup(branches, direction) {
-    const totalLeaves = branches.reduce(
-      (sum, id) => sum + visibleLeafCount(document, id),
-      0,
-    );
-    let cursor = -((Math.max(totalLeaves, 1) - 1) * (mode === LAYOUT_MODES.TOP_BOTTOM ? HORIZONTAL_GAP : VERTICAL_GAP) * 0.5);
-
-    function layoutBranch(id, depth, start) {
-      const node = document.nodes[id];
-      const leaves = visibleLeafCount(document, id);
-      const gap = mode === LAYOUT_MODES.TOP_BOTTOM ? HORIZONTAL_GAP : VERTICAL_GAP;
-      const span = leaves * gap;
-      const center = start + (span - gap) * 0.5;
-      const calculated = mode === LAYOUT_MODES.TOP_BOTTOM
-        ? { x: center, y: direction * depth * VERTICAL_GAP }
-        : { x: direction * depth * HORIZONTAL_GAP, y: center };
-      remember(id, calculated);
-      if (!node.collapsed) {
-        let childCursor = start;
-        for (const childId of node.children) {
-          layoutBranch(childId, depth + 1, childCursor);
-          childCursor += visibleLeafCount(document, childId) * gap;
-        }
-      }
-    }
-
-    for (const id of branches) {
-      layoutBranch(id, 1, cursor);
-      cursor += visibleLeafCount(document, id) * (mode === LAYOUT_MODES.TOP_BOTTOM ? HORIZONTAL_GAP : VERTICAL_GAP);
-    }
-  }
 
   if (mode === LAYOUT_MODES.TOP_BOTTOM) {
     layoutGroup(groups.bottom, 1);
@@ -152,7 +167,6 @@ export function layoutDocument(document, options = {}) {
   }
   return positions;
 }
-
 function axisFor(mode, position) {
   if (typeof position === 'number') return position;
   return mode === LAYOUT_MODES.LEFT_RIGHT ? position?.y : position?.x;

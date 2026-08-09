@@ -107,6 +107,44 @@ MindFlow 负责验证、持久化、实时同步和人工编辑；Codex 等智�
 ```
 
 所有操作在同一事务中执行。任何操作无效时，整批操作都不会保存。增量更新不会删除未涉及节点的人工位置和样式。
+新增的关系表达操作同样可通过 API、CLI 和提案使用：
+
+```json
+{
+  "operations": [
+    {
+      "type": "add_relationship",
+      "relationship": {
+        "id": "rel-risk-value",
+        "sourceId": "risks",
+        "targetId": "value",
+        "label": "影响",
+        "color": "#ef654f",
+        "lineType": "dashed",
+        "arrow": true
+      }
+    },
+    {
+      "type": "add_boundary",
+      "boundary": {
+        "id": "boundary-users",
+        "nodeIds": ["creators", "teams"],
+        "label": "目标用户"
+      }
+    },
+    {
+      "type": "add_summary",
+      "summary": {
+        "id": "summary-users",
+        "nodeIds": ["creators", "teams"],
+        "text": "核心用户群"
+      }
+    }
+  ]
+}
+```
+
+更新和删除分别使用 `update_relationship` / `delete_relationship`、`update_boundary` / `delete_boundary`、`update_summary` / `delete_summary`。外框和概要的 `nodeIds` 必须是两个以上连续同级节点。
 
 ## Web 请求
 
@@ -161,3 +199,24 @@ MindFlow 负责验证、持久化、实时同步和人工编辑；Codex 等智�
 - `request_completed`
 
 验证失败返回 HTTP 400。智能体应读取错误、重新获取最新脑图并修复方案，不得原样重试。
+
+## 多画布工作区
+
+现有 `GET /api/v1/mindmaps/current`、提案和增量操作始终指向当前活动画布，因此 Codex 默认无需传画布 ID。查看和切换活动画布：
+
+```text
+npm run mindmap -- canvases
+npm run mindmap -- switch <canvas-id>
+```
+
+工作区 API：
+
+- `GET /api/v1/canvases`：画布列表和活动画布 ID
+- `POST /api/v1/canvases`：新建并切换画布
+- `POST /api/v1/canvases/:id/activate`：切换活动画布
+- `PATCH /api/v1/canvases/:id`：重命名画布
+- `POST /api/v1/canvases/:id/duplicate`：复制并切换画布
+- `DELETE /api/v1/canvases/:id`：删除画布，工作区至少保留一张
+- `GET /api/v1/workspace/export`：导出整个工作区
+
+每张画布拥有独立文档、AI 请求队列和历史版本。切换画布后必须重新读取当前文档及 revision，再生成提案；旧画布的 revision 不能用于新活动画布。

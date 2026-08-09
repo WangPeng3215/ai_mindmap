@@ -76,4 +76,96 @@ describe('mind-map document', () => {
       errors: expect.arrayContaining([expect.stringContaining('missing')]),
     });
   });
+
+  it('restores a node to its default visual style', () => {
+    const document = createDocumentFromTree({
+      id: 'root',
+      text: '主题',
+      children: [{ id: 'child', text: '子节点', color: '#ff0000', style: { width: 300, fill: '#000000' } }],
+    });
+
+    const reset = applyOperations(document, [{
+      type: 'update_node',
+      id: 'child',
+      patch: { style: undefined, color: undefined },
+    }]);
+
+    expect(reset.nodes.child.style).toBeUndefined();
+    expect(reset.nodes.child.color).toBeUndefined();
+  });});
+
+describe('mind-map relationship expressions', () => {
+  it('creates and edits relationship lines between any two nodes', () => {
+    const document = createDocumentFromTree(sampleTree);
+    const added = applyOperations(document, [{
+      type: 'add_relationship',
+      relationship: {
+        id: 'rel-1', sourceId: 'creators', targetId: 'value', label: '影响',
+        color: '#d45a43', lineType: 'dashed', arrow: true,
+      },
+    }]);
+    expect(added.relationships).toEqual([expect.objectContaining({ id: 'rel-1', label: '影响' })]);
+    const updated = applyOperations(added, [{
+      type: 'update_relationship', id: 'rel-1', patch: { label: '促进', lineType: 'solid' },
+    }]);
+    expect(updated.relationships[0]).toMatchObject({ label: '促进', lineType: 'solid' });
+    const removed = applyOperations(updated, [{ type: 'delete_relationship', id: 'rel-1' }]);
+    expect(removed.relationships).toEqual([]);
+  });
+
+  it('adds boundaries and summaries only for consecutive siblings', () => {
+    const document = createDocumentFromTree({
+      id: 'root', text: '主题', children: [
+        { id: 'a', text: 'A' }, { id: 'b', text: 'B' }, { id: 'c', text: 'C' },
+      ],
+    });
+    const decorated = applyOperations(document, [
+      { type: 'add_boundary', boundary: { id: 'box-1', nodeIds: ['a', 'b'], label: '第一组' } },
+      { type: 'add_summary', summary: { id: 'sum-1', nodeIds: ['b', 'c'], text: '共同结果' } },
+    ]);
+    expect(decorated.boundaries[0]).toMatchObject({ id: 'box-1', nodeIds: ['a', 'b'] });
+    expect(decorated.summaries[0]).toMatchObject({ id: 'sum-1', text: '共同结果' });
+    expect(() => applyOperations(document, [
+      { type: 'add_boundary', boundary: { nodeIds: ['a', 'c'] } },
+    ])).toThrow('连续同级节点');
+  });
+
+  it('removes relationships and ranges that reference deleted nodes', () => {
+    const document = createDocumentFromTree({
+      id: 'root', text: '主题', children: [
+        { id: 'a', text: 'A' }, { id: 'b', text: 'B' }, { id: 'c', text: 'C' },
+      ],
+    });
+    const decorated = applyOperations(document, [
+      { type: 'add_relationship', relationship: { id: 'rel-1', sourceId: 'a', targetId: 'b' } },
+      { type: 'add_boundary', boundary: { id: 'box-1', nodeIds: ['a', 'b'] } },
+      { type: 'add_summary', summary: { id: 'sum-1', nodeIds: ['b', 'c'] } },
+    ]);
+    const next = applyOperations(decorated, [{ type: 'delete_node', id: 'b' }]);
+    expect(next.relationships).toEqual([]);
+    expect(next.boundaries).toEqual([]);
+    expect(next.summaries).toEqual([]);
+  });
+});
+
+describe('relationship expression reorder behavior', () => {
+  it('keeps range expressions valid when sibling order changes', () => {
+    const document = createDocumentFromTree({
+      id: 'root', text: '主题', children: [
+        { id: 'a', text: 'A' }, { id: 'b', text: 'B' }, { id: 'c', text: 'C' },
+      ],
+    });
+    const decorated = applyOperations(document, [
+      { type: 'add_boundary', boundary: { id: 'box-1', nodeIds: ['a', 'b'] } },
+      { type: 'add_summary', summary: { id: 'sum-1', nodeIds: ['a', 'b'] } },
+    ]);
+
+    const reordered = applyOperations(decorated, [
+      { type: 'move_node', id: 'a', parentId: 'root', index: 2 },
+    ]);
+
+    expect(reordered.nodes.root.children).toEqual(['b', 'c', 'a']);
+    expect(reordered.boundaries[0].nodeIds).toEqual(['b', 'c', 'a']);
+    expect(reordered.summaries[0].nodeIds).toEqual(['b', 'c', 'a']);
+  });
 });

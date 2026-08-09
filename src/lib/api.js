@@ -15,6 +15,13 @@ async function request(path, init = {}) {
 
 export const api = {
   getCurrent: () => request('/api/v1/mindmaps/current'),
+  listCanvases: () => request('/api/v1/canvases'),
+  createCanvas: (title) => request('/api/v1/canvases', { method: 'POST', body: JSON.stringify({ title }) }),
+  activateCanvas: (id) => request(`/api/v1/canvases/${encodeURIComponent(id)}/activate`, { method: 'POST' }),
+  renameCanvas: (id, title) => request(`/api/v1/canvases/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ title }) }),
+  duplicateCanvas: (id) => request(`/api/v1/canvases/${encodeURIComponent(id)}/duplicate`, { method: 'POST' }),
+  deleteCanvas: (id) => request(`/api/v1/canvases/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  exportWorkspace: () => request('/api/v1/workspace/export'),
   replaceDocument: (document, clientId) =>
     request('/api/v1/mindmaps/current', {
       method: 'PUT',
@@ -43,7 +50,7 @@ export const api = {
     request(`/api/v1/requests/${encodeURIComponent(id)}/reject`, { method: 'POST' }),
   events: (onEvent) => {
     const events = new EventSource(`${API_BASE}/api/v1/events`);
-    for (const type of ['document_updated', 'request_created', 'request_updated', 'request_completed']) {
+    for (const type of ['document_updated', 'request_created', 'request_updated', 'request_completed', 'canvas_switched', 'canvas_updated']) {
       events.addEventListener(type, (event) => onEvent(type, JSON.parse(event.data)));
     }
     return events;

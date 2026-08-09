@@ -20,6 +20,15 @@ const OPERATION_LABELS = {
   update_node: '修改',
   move_node: '移动',
   delete_node: '删除',
+  add_relationship: '新增连接线',
+  update_relationship: '修改连接线',
+  delete_relationship: '删除连接线',
+  add_boundary: '新增外框',
+  update_boundary: '修改外框',
+  delete_boundary: '删除外框',
+  add_summary: '新增概要',
+  update_summary: '修改概要',
+  delete_summary: '删除概要',
 };
 
 function operationText(operation, document) {
@@ -31,6 +40,15 @@ function operationText(operation, document) {
   }
   if (operation.type === 'move_node') return `移动：${current?.text || operation.id}`;
   if (operation.type === 'delete_node') return `删除：${current?.text || operation.id}`;
+  if (operation.type.includes('relationship')) {
+    return `${OPERATION_LABELS[operation.type]}：${operation.relationship?.label || operation.patch?.label || operation.id || '节点关系'}`;
+  }
+  if (operation.type.includes('boundary')) {
+    return `${OPERATION_LABELS[operation.type]}：${operation.boundary?.label || operation.patch?.label || operation.id || '节点范围'}`;
+  }
+  if (operation.type.includes('summary')) {
+    return `${OPERATION_LABELS[operation.type]}：${operation.summary?.text || operation.patch?.text || operation.id || '节点概要'}`;
+  }
   return operation.id || '未知修改';
 }
 

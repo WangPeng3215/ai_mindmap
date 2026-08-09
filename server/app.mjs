@@ -171,6 +171,63 @@ export async function createApp(options = {}) {
     }
   });
 
+  app.get('/api/v1/canvases', (_request, response) => {
+    response.json(store.listCanvases());
+  });
+
+  app.post('/api/v1/canvases', async (request, response) => {
+    try {
+      const result = await store.createCanvas(request.body);
+      broadcast('canvas_switched', result);
+      response.status(201).json(result);
+    } catch (error) {
+      sendError(response, error);
+    }
+  });
+
+  app.post('/api/v1/canvases/:id/activate', async (request, response) => {
+    try {
+      const result = await store.activateCanvas(request.params.id);
+      broadcast('canvas_switched', result);
+      response.json(result);
+    } catch (error) {
+      sendError(response, error);
+    }
+  });
+
+  app.patch('/api/v1/canvases/:id', async (request, response) => {
+    try {
+      const result = await store.renameCanvas(request.params.id, request.body);
+      broadcast('canvas_updated', result);
+      response.json(result);
+    } catch (error) {
+      sendError(response, error);
+    }
+  });
+
+  app.post('/api/v1/canvases/:id/duplicate', async (request, response) => {
+    try {
+      const result = await store.duplicateCanvas(request.params.id);
+      broadcast('canvas_switched', result);
+      response.status(201).json(result);
+    } catch (error) {
+      sendError(response, error);
+    }
+  });
+
+  app.delete('/api/v1/canvases/:id', async (request, response) => {
+    try {
+      const result = await store.deleteCanvas(request.params.id);
+      broadcast('canvas_switched', result);
+      response.json(result);
+    } catch (error) {
+      sendError(response, error);
+    }
+  });
+
+  app.get('/api/v1/workspace/export', (_request, response) => {
+    response.json(store.exportWorkspace());
+  });
   const distDir = resolve('dist');
   if (existsSync(distDir)) {
     app.use(express.static(distDir));
