@@ -18,7 +18,23 @@ npm run mindmap -- start
 npm run mindmap -- create "画布名称"
 ```
 
-创建或切换画布后必须重新读取当前文档和 `revision`。
+切换到已有画布后必须重新读取当前文档和 `revision`。新建空画布走下方大纲协议时无需读取。
+
+新建整张脑图优先使用低 Token 大纲协议。大纲第一行是根节点，缩进表示层级：
+
+```text
+@layout left-right
+产品规划
+  目标
+    提升留存
+  风险
+```
+
+```text
+npm run mindmap -- propose-outline <outline.txt>
+```
+
+该命令在本地读取当前 `revision`、生成节点 ID 并提交 Web 审核，因此新建空画布后不需要再执行 `read`。仅在明确要求立即应用时使用 `apply-outline`。
 
 ## Codex 主链路
 
@@ -27,7 +43,11 @@ Codex 不需要先创建 Web 请求。先读取当前导图：
 ```text
 npm run mindmap -- read
 npm run mindmap -- read <node-id>
+npm run mindmap -- read --compact
+npm run mindmap -- read <node-id> --compact
 ```
+
+智能体默认使用 `--compact`，只读取结构、稳定节点 ID、布局和关系表达。只有样式级修改确实需要完整字段时才使用完整 `read`。
 
 随后把 `baseRevision`、`document` 或 `operations` 提交到 `POST /api/v1/proposals`。默认审核模式：
 

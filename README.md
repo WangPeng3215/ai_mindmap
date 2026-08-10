@@ -47,6 +47,24 @@ npm run mindmap -- start
 npm run mindmap -- create "产品规划"
 ```
 
+低 Token 模式下，从缩进大纲生成审核方案：
+
+```text
+@layout left-right
+产品规划
+  目标
+    提升留存
+  风险
+    进度风险
+```
+
+```powershell
+npm run mindmap -- propose-outline .mindflow/product-plan.outline.txt
+npm run mindmap -- read --compact
+```
+
+`propose-outline` 会自动读取当前版本并生成节点 ID，新建空画布后无需再执行 `read`。修改已有脑图时，可以使用 `read <node-id> --compact` 只读取目标分支。
+
 推送完整脑图：
 
 ```powershell

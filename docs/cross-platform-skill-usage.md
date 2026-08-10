@@ -43,6 +43,7 @@ WorkBuddy 必须能访问本机项目目录并执行 Node.js。默认项目路�
 
 - `start`：检查服务，未运行时后台启动 Web 与 API。
 - `create <title>`：新建并切换画布。
-- `read`：读取当前画布和最新 revision。
+- `read --compact`：读取当前画布的精简结构和最新 revision。
+- `propose-outline`：新建整图时从缩进大纲生成审核方案，无需先读取空画布。
 - `propose`：默认提交页面审核。
 - `apply-safe`：仅在用户明确要求立即应用时使用。

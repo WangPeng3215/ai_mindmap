@@ -9,10 +9,10 @@ Send Codex analysis to MindFlow as a full editable map or stable-ID incremental 
 
 ## Workflow
 
-1. Work from the `ai_mindmap` project root. Run `npm run mindmap -- status`. If `npm` is unavailable, load the workspace Node.js dependency and run `node scripts/mindmap-cli.mjs status` with that executable.
-2. Run `npm run mindmap -- read` before every submission. For a selected branch, run `npm run mindmap -- read <node-id>`.
-3. Convert the analysis into one payload described in [references/payloads.md](references/payloads.md). Put the exact `revision` returned by `read` into `baseRevision`.
-4. Prefer incremental `operations` when a map already contains useful content or manual edits. Use a complete `document` only for an intentional whole-map creation or replacement.
+1. Work from the `ai_mindmap` project root and confirm it with `npm run mindmap -- status`.
+2. Run `npm run mindmap -- read --compact` before a map update. For a selected branch, run `npm run mindmap -- read <node-id> --compact`.
+3. Convert the analysis into one payload described in [references/payloads.md](references/payloads.md). Put the returned `revision` into `baseRevision`.
+4. Prefer incremental `operations` for existing content. For a new whole map, return to the `create-a-mindmap` outline workflow instead of writing verbose node operations.
 5. Default to review: run `npm run mindmap -- propose <proposal.json>`. This displays a preview in the Web panel without changing the canvas.
 6. Use `npm run mindmap -- apply-safe <proposal.json>` only when the user explicitly asks to apply immediately. This still checks `baseRevision` before changing the map.
 7. Confirm the returned request status and revision. Report whether the result is awaiting review or already applied.
@@ -31,7 +31,7 @@ Create temporary payloads under `.mindflow/`; this directory is ignored by Git.
 
 ## Handle Conflicts
 
-If the command returns `code: "REVISION_CONFLICT"`, treat the included `document` as the latest source of truth. Rebuild the proposal against `currentRevision`, preserving the new manual changes, then submit once more. Never resend the stale payload unchanged.
+If the command returns `code: "REVISION_CONFLICT"`, re-read with `--compact`, rebuild against the latest revision, and preserve manual changes. Never resend the stale payload unchanged.
 
 If validation fails, repair the payload from the error. Never bypass validation with the legacy `apply` or `ops` commands.
 

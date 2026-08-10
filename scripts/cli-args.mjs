@@ -16,13 +16,26 @@ export function parseCommand(args) {
       return { command, title: requireArg(rest.join(' ').trim(), 'create 需要画布名称') };
     case 'switch':
       return { command, canvasId: requireArg(rest[0], 'switch 需要画布 ID') };
-    case 'read':
-      return { command, ...(rest[0] ? { nodeId: rest[0] } : {}) };
+    case 'read': {
+      const compact = rest.includes('--compact');
+      const nodeId = rest.find((value) => value !== '--compact');
+      return { command, ...(nodeId ? { nodeId } : {}), ...(compact ? { compact: true } : {}) };
+    }
     case 'apply':
     case 'ops':
     case 'propose':
     case 'apply-safe':
       return { command, file: requireArg(rest[0], `${command} 需要一个 JSON 文件`) };
+    case 'propose-outline':
+    case 'apply-outline': {
+      const file = requireArg(rest.find((value) => !value.startsWith('--layout=')), `${command} 需要一个大纲文件`);
+      const layoutOption = rest.find((value) => value.startsWith('--layout='));
+      return {
+        command,
+        file,
+        ...(layoutOption ? { layoutMode: requireArg(layoutOption.slice('--layout='.length), '--layout 不能为空') } : {}),
+      };
+    }
     case 'request':
       return { command, message: requireArg(rest.join(' ').trim(), 'request 需要请求内容') };
     case 'complete':
