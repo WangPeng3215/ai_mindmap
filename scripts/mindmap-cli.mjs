@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { parseCommand } from './cli-args.mjs';
+import { ensureMindFlowStarted } from './service-launcher.mjs';
 
 const baseUrl = process.env.MINDFLOW_API_URL || 'http://127.0.0.1:8787';
 
@@ -55,7 +56,9 @@ function help() {
 
 Usage:
   npm run mindmap -- status
+  npm run mindmap -- start
   npm run mindmap -- canvases
+  npm run mindmap -- create <title>
   npm run mindmap -- switch <canvas-id>
   npm run mindmap -- read [node-id]
   npm run mindmap -- pending
@@ -76,6 +79,9 @@ Environment:
 try {
   const parsed = parseCommand(process.argv.slice(2));
   switch (parsed.command) {
+    case 'start':
+      print(await ensureMindFlowStarted({ apiUrl: baseUrl }));
+      break;
     case 'status': {
       const health = await request('/api/v1/health');
       const current = await request('/api/v1/mindmaps/current');
@@ -85,6 +91,12 @@ try {
     }
     case 'canvases':
       print(await request('/api/v1/canvases'));
+      break;
+    case 'create':
+      print(await request('/api/v1/canvases', {
+        method: 'POST',
+        body: JSON.stringify({ title: parsed.title }),
+      }));
       break;
     case 'switch':
       print(await request(`/api/v1/canvases/${encodeURIComponent(parsed.canvasId)}/activate`, { method: 'POST' }));

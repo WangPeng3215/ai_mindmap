@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create A Mind Map"
+  short_description: "启动 MindFlow 并将当前需求生成可编辑思维导图"
+  default_prompt: "使用 $create-a-mindmap 启动 MindFlow，并把当前需求生成可审核、可编辑的思维导图。"

@@ -3,6 +3,7 @@ import {
   applyOperations,
   createDocumentFromTree,
   documentToTree,
+  repairDocumentExpressions,
   validateDocument,
 } from './mindmap.js';
 
@@ -95,6 +96,29 @@ describe('mind-map document', () => {
   });});
 
 describe('mind-map relationship expressions', () => {
+  it('repairs legacy ranges before allowing a new expression operation', () => {
+    const document = createDocumentFromTree({
+      id: 'root', text: 'Topic', children: [
+        { id: 'a', text: 'A' }, { id: 'b', text: 'B' }, { id: 'c', text: 'C' },
+        { id: 'branch', text: 'Branch', children: [{ id: 'child', text: 'Child' }] },
+      ],
+    });
+    document.boundaries = [
+      { id: 'expandable', nodeIds: ['a', 'c'], label: 'Legacy range' },
+      { id: 'cross-branch', nodeIds: ['a', 'child'], label: 'Invalid range' },
+    ];
+
+    const repaired = repairDocumentExpressions(document);
+    expect(repaired.boundaries).toEqual([
+      expect.objectContaining({ id: 'expandable', nodeIds: ['a', 'b', 'c'] }),
+    ]);
+
+    const next = applyOperations(document, [{
+      type: 'add_relationship', relationship: { id: 'rel-1', sourceId: 'a', targetId: 'child' },
+    }]);
+    expect(next.relationships).toEqual([expect.objectContaining({ id: 'rel-1' })]);
+  });
+
   it('creates and edits relationship lines between any two nodes', () => {
     const document = createDocumentFromTree(sampleTree);
     const added = applyOperations(document, [{

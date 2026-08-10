@@ -5,6 +5,7 @@ import {
   applyOperations,
   createDocumentFromTree,
   isMindMapDocument,
+  repairDocumentExpressions,
 } from '../src/domain/mindmap.js';
 
 const DEFAULT_TREE = {
@@ -285,6 +286,12 @@ export async function createStore(dataDir) {
       writeJson(documentPath, document),
       writeJson(requestsPath, requests),
     ]);
+  }
+
+  const repairedDocument = repairDocumentExpressions(document);
+  if (!isDeepStrictEqual(repairedDocument, document)) {
+    document = repairedDocument;
+    await persistWorkspace();
   }
 
   async function persistRequests() {

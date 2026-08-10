@@ -13,13 +13,14 @@ function BoundaryNodeComponent({ data, selected }) {
 }
 
 function SummaryNodeComponent({ data, selected }) {
-  const { summary, side, onEditExpression, onFinishExpressionEdit, previewMode, forceEditing } = data;
+  const { summary, side, onEditExpression, onFinishExpressionEdit, onStartSummaryEdit, previewMode, forceEditing } = data;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(summary.text || '概要');
   const inputRef = useRef(null);
+  const editingStartedAtRef = useRef(0);
 
   useEffect(() => setDraft(summary.text || '概要'), [summary.text]);
-  useEffect(() => { if (forceEditing) setEditing(true); }, [forceEditing]);
+  useEffect(() => { if (forceEditing) startEditing(); }, [forceEditing]);
   useEffect(() => {
     if (editing) inputRef.current?.select();
   }, [editing]);
@@ -27,7 +28,13 @@ function SummaryNodeComponent({ data, selected }) {
   function commit() {
     const value = draft.trim() || '概要';
     setEditing(false);
+    onFinishExpressionEdit?.();
     if (value !== summary.text) onEditExpression?.('summary', summary.id, { text: value });
+  }
+
+  function startEditing() {
+    editingStartedAtRef.current = Date.now();
+    setEditing(true);
   }
 
   return (
@@ -35,8 +42,8 @@ function SummaryNodeComponent({ data, selected }) {
       className={`summary-decoration side-${side} ${selected ? 'is-selected' : ''}`}
       style={{ '--expression-color': summary.color || '#ef654f' }}
       onDoubleClick={(event) => {
-        event.stopPropagation();
-        if (!previewMode) setEditing(true);
+        onStartSummaryEdit?.();
+        if (!previewMode) startEditing();
       }}
     >
       <i aria-hidden="true" />
@@ -46,12 +53,19 @@ function SummaryNodeComponent({ data, selected }) {
           className="summary-edit-input nodrag"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          onBlur={commit}
+          onBlur={() => {
+            if (Date.now() - editingStartedAtRef.current < 250) {
+              requestAnimationFrame(() => inputRef.current?.focus());
+              return;
+            }
+            commit();
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') commit();
             if (event.key === 'Escape') {
               setDraft(summary.text || '概要');
               setEditing(false);
+              onFinishExpressionEdit?.();
             }
           }}
         />

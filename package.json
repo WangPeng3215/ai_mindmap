@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm test && npm run build",
-    "mindmap": "node scripts/mindmap-cli.mjs"
+    "mindmap": "node scripts/mindmap-cli.mjs",
+    "sync:agent-skills": "node scripts/sync-agent-skills.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

@@ -35,6 +35,18 @@ npm start
 
 ## 智能体调用
 
+自动检查并启动 MindFlow：
+
+```powershell
+npm run mindmap -- start
+```
+
+新建并切换画布：
+
+```powershell
+npm run mindmap -- create "产品规划"
+```
+
 推送完整脑图：
 
 ```powershell
@@ -54,6 +66,10 @@ npm run mindmap -- pending
 ```
 
 详细协议见 [docs/agent-protocol.md](docs/agent-protocol.md)。
+
+Codex、Claude Code、TraeCode 和 WorkBuddy 的 `create-a-mindmap` 入口安装与调用方式见 [docs/cross-platform-skill-usage.md](docs/cross-platform-skill-usage.md)。
+
+跨电脑部署请阅读 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
 ## 验证
 

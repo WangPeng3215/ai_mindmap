@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -40,6 +40,8 @@ export function MindMapCanvas({
 }) {
   const model = useMemo(() => createFlowModel(document), [document]);
   const [editingSummaryId, setEditingSummaryId] = useState(null);
+  const summarySelectTimerRef = useRef(null);
+  const lastSummaryClickRef = useRef({ id: null, time: 0 });
   const selectedNodeSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const decoratedNodes = useMemo(
     () => model.nodes.map((node) => {
@@ -56,6 +58,7 @@ export function MindMapCanvas({
           onEditExpression,
           forceEditing: kind === 'summary' && editingSummaryId === node.data.expressionId,
           onFinishExpressionEdit: () => setEditingSummaryId(null),
+          onStartSummaryEdit: () => clearTimeout(summarySelectTimerRef.current),
           onAddChild,
           onToggleCollapse,
           previewMode,
@@ -70,6 +73,7 @@ export function MindMapCanvas({
       onEditExpression,
       onEditNode,
       onToggleCollapse,
+      editingSummaryId,
       previewChanges,
       previewMode,
       selectedExpression,
@@ -91,6 +95,7 @@ export function MindMapCanvas({
   const [nodes, setNodes, onNodesChange] = useNodesState(decoratedNodes);
 
   useEffect(() => setNodes(decoratedNodes), [decoratedNodes, setNodes]);
+  useEffect(() => () => clearTimeout(summarySelectTimerRef.current), []);
 
   const onBranchDrag = useCallback((_event, node) => {
     if (!node.data?.isRootChild) return;
@@ -129,6 +134,21 @@ export function MindMapCanvas({
         onNodesChange={onAlignedNodesChange}
         onNodeClick={(event, node) => {
           if (node.data?.kind) {
+            if (node.data.kind === 'summary') {
+              const now = Date.now();
+              const previous = lastSummaryClickRef.current;
+              clearTimeout(summarySelectTimerRef.current);
+              if (previous.id === node.data.expressionId && now - previous.time < 400) {
+                lastSummaryClickRef.current = { id: null, time: 0 };
+                setEditingSummaryId(node.data.expressionId);
+                return;
+              }
+              lastSummaryClickRef.current = { id: node.data.expressionId, time: now };
+              summarySelectTimerRef.current = setTimeout(() => {
+                onSelectExpression(node.data.kind, node.data.expressionId);
+              }, 220);
+              return;
+            }
             onSelectExpression(node.data.kind, node.data.expressionId);
             return;
           }
@@ -136,8 +156,7 @@ export function MindMapCanvas({
         }}
         onNodeDoubleClick={(_event, node) => {
           if (!previewMode && node.data?.kind === 'summary') {
-            onSelectExpression('summary', node.data.expressionId);
-            setEditingSummaryId(node.data.expressionId);
+            clearTimeout(summarySelectTimerRef.current);
           }
         }}
         onEdgeClick={(_event, edge) => {

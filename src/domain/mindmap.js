@@ -86,17 +86,34 @@ function pruneExpressions(document) {
 }
 
 function reconcileRangeExpressions(document) {
+  const repaired = repairDocumentExpressions(document);
+  document.boundaries = repaired.boundaries;
+  document.summaries = repaired.summaries;
+}
+
+export function repairDocumentExpressions(value) {
+  const document = ensureExpressionCollections(structuredClone(value));
+  document.relationships = document.relationships.filter((item) => (
+    item?.id && document.nodes[item.sourceId] && document.nodes[item.targetId] && item.sourceId !== item.targetId
+  ));
+
   for (const collection of ['boundaries', 'summaries']) {
     document[collection] = document[collection].flatMap((item) => {
-      const nodes = item.nodeIds.map((id) => document.nodes[id]).filter(Boolean);
-      if (nodes.length !== item.nodeIds.length || !nodes[0]?.parentId) return [];
+      const ids = [...new Set(Array.isArray(item?.nodeIds) ? item.nodeIds : [])];
+      if (!item?.id || ids.length < 2) return [];
+      const nodes = ids.map((id) => document.nodes[id]);
+      if (nodes.some((node) => !node?.parentId)) return [];
       const parentId = nodes[0].parentId;
       if (nodes.some((node) => node.parentId !== parentId)) return [];
       const siblings = document.nodes[parentId].children;
-      const indexes = item.nodeIds.map((id) => siblings.indexOf(id)).sort((a, b) => a - b);
-      return [{ ...item, nodeIds: siblings.slice(indexes[0], indexes[indexes.length - 1] + 1) }];
+      const indexes = ids.map((id) => siblings.indexOf(id));
+      if (indexes.some((index) => index < 0)) return [];
+      const start = Math.min(...indexes);
+      const end = Math.max(...indexes);
+      return [{ ...item, nodeIds: siblings.slice(start, end + 1) }];
     });
   }
+  return document;
 }
 
 function makeId(prefix = 'node') {
@@ -311,13 +328,14 @@ function deleteRangeExpression(document, operation, collection, kind) {
 }
 
 export function applyOperations(document, operations) {
-  const initial = validateDocument(document);
+  const repaired = repairDocumentExpressions(document);
+  const initial = validateDocument(repaired);
   if (!initial.valid) throw new Error(initial.errors.join('; '));
   if (!Array.isArray(operations) || operations.length === 0) {
     throw new Error('operations 必须是非空数组');
   }
 
-  const next = ensureExpressionCollections(structuredClone(document));
+  const next = ensureExpressionCollections(structuredClone(repaired));
   for (const operation of operations) {
     switch (operation.type) {
       case 'add_node':
@@ -363,7 +381,7 @@ export function applyOperations(document, operations) {
         throw new Error(`不支持的操作类型: ${operation.type}`);
     }
   }
-  next.revision = (Number.isInteger(document.revision) ? document.revision : 0) + 1;
+  next.revision = (Number.isInteger(repaired.revision) ? repaired.revision : 0) + 1;
   next.updatedAt = new Date().toISOString();
   const result = validateDocument(next);
   if (!result.valid) throw new Error(result.errors.join('; '));

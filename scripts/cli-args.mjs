@@ -7,10 +7,13 @@ export function parseCommand(args) {
   const [command = 'help', ...rest] = args;
   switch (command) {
     case 'status':
+    case 'start':
     case 'canvases':
     case 'pending':
     case 'help':
       return { command };
+    case 'create':
+      return { command, title: requireArg(rest.join(' ').trim(), 'create 需要画布名称') };
     case 'switch':
       return { command, canvasId: requireArg(rest[0], 'switch 需要画布 ID') };
     case 'read':

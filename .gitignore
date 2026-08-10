@@ -5,4 +5,7 @@ dist/
 .npm-cache/
 data/current-map.json
 data/requests.json
+data/workspace.json
+data/snapshots/
+release/
 *.log

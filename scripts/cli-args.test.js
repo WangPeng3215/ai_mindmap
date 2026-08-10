@@ -6,6 +6,8 @@ describe('mind-map CLI arguments', () => {
     expect(parseCommand(['apply', 'map.json'])).toEqual({ command: 'apply', file: 'map.json' });
     expect(parseCommand(['read', 'branch-1'])).toEqual({ command: 'read', nodeId: 'branch-1' });
     expect(parseCommand(['canvases'])).toEqual({ command: 'canvases' });
+    expect(parseCommand(['start'])).toEqual({ command: 'start' });
+    expect(parseCommand(['create', '产品', '规划'])).toEqual({ command: 'create', title: '产品 规划' });
     expect(parseCommand(['switch', 'canvas-1'])).toEqual({ command: 'switch', canvasId: 'canvas-1' });
     expect(parseCommand(['propose', 'proposal.json'])).toEqual({ command: 'propose', file: 'proposal.json' });
     expect(parseCommand(['apply-safe', 'proposal.json'])).toEqual({ command: 'apply-safe', file: 'proposal.json' });
@@ -30,5 +32,6 @@ describe('mind-map CLI arguments', () => {
   it('rejects missing required arguments', () => {
     expect(() => parseCommand(['apply'])).toThrow('JSON 文件');
     expect(() => parseCommand(['complete', 'request-1'])).toThrow('结果文件');
+    expect(() => parseCommand(['create'])).toThrow('画布名称');
   });
 });
